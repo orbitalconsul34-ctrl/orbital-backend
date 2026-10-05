@@ -6,28 +6,27 @@ const obtenerTodos = async () => {
 };
 
 const crear = async (datosProducto) => {
-    // Agregamos categoria, especialidad y beneficios
     const { 
-        nombre, descripcion, precio, stock = 0, estado = 'ACTIVO', 
-        url_imagen_cloudinary = null, categoria = '', especialidad = '', beneficios = '' 
+        nombre, marca, especialidad, precio, precio_antes, stock = 0, indicacion, presentacion, 
+        descripcion, beneficios, url_imagen_cloudinary = null, estado = 'ACTIVO'
     } = datosProducto;
     
     const [resultado] = await db.query(
-        'INSERT INTO productos_tienda (nombre, descripcion, precio, stock, estado, url_imagen_cloudinary, categoria, especialidad, beneficios) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [nombre, descripcion, precio, stock, estado, url_imagen_cloudinary, categoria, especialidad, beneficios]
+        'INSERT INTO productos_tienda (nombre, marca, especialidad, precio, precio_antes, stock, indicacion, presentacion, descripcion, beneficios, url_imagen_cloudinary, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [nombre, marca, especialidad, precio, precio_antes || null, stock, indicacion, presentacion, descripcion, beneficios, url_imagen_cloudinary, estado]
     );
     return resultado.insertId;
 };
 
 const actualizar = async (id, datosProducto) => {
     const { 
-        nombre, descripcion, precio, stock, estado, 
-        url_imagen_cloudinary, categoria, especialidad, beneficios 
+        nombre, marca, especialidad, precio, precio_antes, stock, indicacion, presentacion, 
+        descripcion, beneficios, url_imagen_cloudinary, estado 
     } = datosProducto;
 
     const [resultado] = await db.query(
-        'UPDATE productos_tienda SET nombre = ?, descripcion = ?, precio = ?, stock = ?, estado = ?, url_imagen_cloudinary = ?, categoria = ?, especialidad = ?, beneficios = ? WHERE id = ?',
-        [nombre, descripcion, precio, stock, estado, url_imagen_cloudinary, categoria, especialidad, beneficios, id]
+        'UPDATE productos_tienda SET nombre = ?, marca = ?, especialidad = ?, precio = ?, precio_antes = ?, stock = ?, indicacion = ?, presentacion = ?, descripcion = ?, beneficios = ?, url_imagen_cloudinary = ?, estado = ? WHERE id = ?',
+        [nombre, marca, especialidad, precio, precio_antes || null, stock, indicacion, presentacion, descripcion, beneficios, url_imagen_cloudinary, estado, id]
     );
     return resultado.affectedRows;
 };
@@ -39,13 +38,7 @@ const eliminar = async (id) => {
 
 const obtenerPorId = async (id) => {
     const [rows] = await db.query('SELECT * FROM productos_tienda WHERE id = ?', [id]);
-    return rows[0]; // Retorna solo el primer producto encontrado
+    return rows[0];
 };
 
-module.exports = {
-    obtenerPorId,
-    obtenerTodos,
-    crear,
-    actualizar,
-    eliminar
-};
+module.exports = { obtenerPorId, obtenerTodos, crear, actualizar, eliminar };

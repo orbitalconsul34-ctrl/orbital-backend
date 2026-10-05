@@ -6,22 +6,21 @@ const obtenerTodos = async () => {
 };
 
 const crear = async (datos) => {
-    // Agregamos categoria y mas_elegido. url_imagen es opcional.
-    const { nombre_paquete, descripcion, cantidad_sesiones, precio_total, url_imagen, estado = 'ACTIVO', categoria = 'PLAN COMBINADO', mas_elegido = 0 } = datos;
+    const { encabezado, categoria, titulo, subtitulo, precio, vigencia, beneficios, url_imagen, estado = 'ACTIVO', destacado = 0 } = datos;
     
     const [resultado] = await db.query(
-        'INSERT INTO paquetes_citas (nombre_paquete, descripcion, cantidad_sesiones, precio_total, url_imagen, estado, categoria, mas_elegido) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [nombre_paquete, descripcion, cantidad_sesiones, precio_total, url_imagen || null, estado, categoria, mas_elegido]
+        'INSERT INTO paquetes_citas (encabezado, categoria, titulo, subtitulo, precio, vigencia, beneficios, url_imagen, estado, destacado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [encabezado, categoria, titulo, subtitulo, precio, vigencia, beneficios, url_imagen || null, estado, destacado]
     );
     return resultado.insertId;
 };
 
 const actualizar = async (id, datos) => {
-    const { nombre_paquete, descripcion, cantidad_sesiones, precio_total, url_imagen, estado, categoria, mas_elegido } = datos;
+    const { encabezado, categoria, titulo, subtitulo, precio, vigencia, beneficios, url_imagen, estado, destacado } = datos;
     
     const [resultado] = await db.query(
-        'UPDATE paquetes_citas SET nombre_paquete = ?, descripcion = ?, cantidad_sesiones = ?, precio_total = ?, url_imagen = ?, estado = ?, categoria = ?, mas_elegido = ? WHERE id = ?',
-        [nombre_paquete, descripcion, cantidad_sesiones, precio_total, url_imagen || null, estado, categoria, mas_elegido, id]
+        'UPDATE paquetes_citas SET encabezado = ?, categoria = ?, titulo = ?, subtitulo = ?, precio = ?, vigencia = ?, beneficios = ?, url_imagen = ?, estado = ?, destacado = ? WHERE id = ?',
+        [encabezado, categoria, titulo, subtitulo, precio, vigencia, beneficios, url_imagen || null, estado, destacado, id]
     );
     return resultado.affectedRows;
 };

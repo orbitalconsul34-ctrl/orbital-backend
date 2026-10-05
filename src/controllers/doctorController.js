@@ -1,62 +1,60 @@
 const doctorModel = require('../models/doctorModel');
 
-const getDoctores = async (req, res) => {
+// Envuelve cada handler para no repetir el try/catch
+const manejar = (fn, mensaje) => async (req, res) => {
     try {
-        const doctores = await doctorModel.obtenerTodos();
-        res.json(doctores);
+        await fn(req, res);
     } catch (error) {
-        console.error('Error en getDoctores:', error);
-        res.status(500).json({ error: 'Error interno al obtener los doctores' });
+        console.error(mensaje, error);
+        res.status(500).json({ error: mensaje });
     }
 };
 
-// Nueva función para manejar la creación
-const crearDoctor = async (req, res) => {
-    try {
-        // req.body contiene el JSON con los datos que enviaremos en la petición
-        const nuevoId = await doctorModel.crear(req.body);
-        res.status(201).json({ 
-            mensaje: 'Doctor creado exitosamente', 
-            id: nuevoId 
-        });
-    } catch (error) {
-        console.error('Error en crearDoctor:', error);
-        res.status(500).json({ error: 'Error al registrar el doctor en la base de datos' });
-    }
-};
+const getDoctores = manejar(async (req, res) => {
+    res.json(await doctorModel.obtenerTodos());
+}, 'Error interno al obtener los doctores');
 
-const actualizarDoctor = async (req, res) => {
-    try {
-        // req.params.id captura el número que enviemos en la URL
-        const filasAfectadas = await doctorModel.actualizar(req.params.id, req.body);
-        
-        if (filasAfectadas === 0) {
-            return res.status(404).json({ error: 'Doctor no encontrado' });
-        }
-        res.json({ mensaje: 'Doctor actualizado exitosamente' });
-    } catch (error) {
-        console.error('Error en actualizarDoctor:', error);
-        res.status(500).json({ error: 'Error al actualizar el doctor' });
-    }
-};
+const getDoctoresPublicos = manejar(async (req, res) => {
+    res.json(await doctorModel.obtenerPublicos());
+}, 'Error interno al obtener los doctores');
 
-const eliminarDoctor = async (req, res) => {
-    try {
-        const filasAfectadas = await doctorModel.eliminar(req.params.id);
-        
-        if (filasAfectadas === 0) {
-            return res.status(404).json({ error: 'Doctor no encontrado' });
-        }
-        res.json({ mensaje: 'Doctor eliminado exitosamente' });
-    } catch (error) {
-        console.error('Error en eliminarDoctor:', error);
-        res.status(500).json({ error: 'Error al eliminar el doctor' });
-    }
-};
+const getPerfil = manejar(async (req, res) => {
+    const doctor = await doctorModel.obtenerPerfil(req.params.id);
+    if (!doctor) return res.status(404).json({ error: 'Doctor no encontrado' });
+    res.json(doctor);
+}, 'Error interno al obtener el doctor');
 
-module.exports = {
-    getDoctores,
-    crearDoctor,
-    actualizarDoctor,
-    eliminarDoctor
+const crearDoctor = manejar(async (req, res) => {
+    const id = await doctorModel.crear(req.body);
+    res.status(201).json({ mensaje: 'Doctor creado exitosamente', id });
+}, 'Error al registrar el doctor en la base de datos');
+
+const actualizarDoctor = manejar(async (req, res) => {
+    const filas = await doctorModel.actualizar(req.params.id, req.body);
+    if (filas === 0) return res.status(404).json({ error: 'Doctor no encontrado' });
+    res.json({ mensaje: 'Doctor actualizado exitosamente' });
+}, 'Error al actualizar el doctor');
+
+const eliminarDoctor = manejar(async (req, res) => {
+    const filas = await doctorModel.eliminar(req.params.id);
+    if (filas === 0) return res.status(404).json({ error: 'Doctor no encontrado' });
+    res.json({ mensaje: 'Doctor eliminado exitosamente' });
+}, 'Error al eliminar el doctor');
+
+// === NUEVOS CONTROLADORES DE TURNOS ===
+const getConfigTurnos = manejar(async (req, res) => {
+    const config = await doctorModel.obtenerConfigTurnos(req.params.id);
+    // Si no tiene, devuelve objetos vacíos para que el frontend no falle
+    res.json(config || { horarios_base: '{}', dias_bloqueados: '[]' });
+}, 'Error al obtener los turnos del doctor');
+
+const actualizarConfigTurnos = manejar(async (req, res) => {
+    const { horarios_base, dias_bloqueados } = req.body;
+    await doctorModel.actualizarConfigTurnos(req.params.id, horarios_base, dias_bloqueados);
+    res.json({ mensaje: 'Horarios actualizados exitosamente' });
+}, 'Error al actualizar los turnos del doctor');
+
+module.exports = { 
+    getDoctores, getDoctoresPublicos, getPerfil, crearDoctor, 
+    actualizarDoctor, eliminarDoctor, getConfigTurnos, actualizarConfigTurnos 
 };

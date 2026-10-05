@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const db = require('./src/config/db'); 
+const db = require('./src/config/db');
 
 // Importamos las rutas
 const productoRoutes = require('./src/routes/productoRoutes');
@@ -9,7 +9,8 @@ const authRoutes = require('./src/routes/authRoutes');
 const doctorRoutes = require('./src/routes/doctorRoutes');
 const publicacionesRoutes = require('./src/routes/publicacionesRoutes');
 const pacienteRoutes = require('./src/routes/pacienteRoutes');
-const paqueteRoutes = require('./src/routes/paqueteRoutes'); 
+const paqueteRoutes = require('./src/routes/paqueteRoutes');
+const citaRoutes = require('./src/routes/citaRoutes'); // NUEVA: reservas de citas
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/api/publicaciones', publicacionesRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacienteRoutes);
 app.use('/api/paquetes', paqueteRoutes);
+app.use('/api/citas', citaRoutes); // NUEVA: reservas de citas
 
 app.get('/', async (req, res) => {
     try {
