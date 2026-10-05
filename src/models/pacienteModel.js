@@ -21,9 +21,9 @@ const guardarPorDni = async ({ dni, nombre_completo, telefono, correo }) => {
         `INSERT INTO pacientes (dni, nombre_completo, telefono, correo) VALUES (?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
             id = LAST_INSERT_ID(id),
+            dni = VALUES(dni),
             nombre_completo = VALUES(nombre_completo),
-            telefono = COALESCE(telefono, VALUES(telefono)),
-            correo = COALESCE(correo, VALUES(correo))`,
+            telefono = COALESCE(telefono, VALUES(telefono))`,
         [dni, nombre_completo, telefono, correo]
     );
     return resultado.insertId;
