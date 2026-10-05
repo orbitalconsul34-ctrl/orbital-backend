@@ -23,7 +23,8 @@ const guardarPorDni = async ({ dni, nombre_completo, telefono, correo }) => {
             id = LAST_INSERT_ID(id),
             dni = VALUES(dni),
             nombre_completo = VALUES(nombre_completo),
-            telefono = COALESCE(telefono, VALUES(telefono))`,
+            telefono = VALUES(telefono),
+            correo = VALUES(correo)`,
         [dni, nombre_completo, telefono, correo]
     );
     return resultado.insertId;
