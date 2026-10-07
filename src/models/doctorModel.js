@@ -35,11 +35,12 @@ const obtenerTodos = async () => {
 };
 
 // Página pública de reservas: sin datos privados
+// Página pública: ahora SÍ trae los datos del currículum para el modal
 const obtenerPublicos = async () => {
     const [rows] = await db.query(
-        'SELECT id, nombres, especialidad, titulo, foto_url, precio, precio_virtual, duracion_min FROM doctores WHERE activo = 1 ORDER BY especialidad, nombres'
+        'SELECT id, nombres, especialidad, titulo, foto_url, precio, precio_virtual, duracion_min, formacion, cursos, experiencia FROM doctores WHERE activo = 1 ORDER BY especialidad, nombres'
     );
-    return rows;
+    return rows.map(normalizar); // Agregamos .map(normalizar) para que convierta el texto en JSON
 };
 
 // Página pública de perfil del doctor
