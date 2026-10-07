@@ -1,15 +1,17 @@
 const crypto = require('crypto');
 const citaModel = require('../models/citaModel');
+const doctorModel = require('../models/doctorModel');
 const pacienteModel = require('../models/pacienteModel');
 const disponibilidad = require('../services/disponibilidad');
 const culqi = require('../services/culqi');
 const { ejecutarIntegraciones } = require('../services/integraciones');
-const doctorModel = require('../models/doctorModel');
+
 const HOLD_MINUTOS = Number(process.env.HOLD_MINUTOS) || 15;
 const reFecha = /^\d{4}-\d{2}-\d{2}$/;
 const reHora = /^\d{2}:\d{2}$/;
 const reMes = /^\d{4}-(0[1-9]|1[0-2])$/;
 const db = require('../config/db');
+
 const manejar = (fn, mensaje) => async (req, res) => {
     try {
         await fn(req, res);
@@ -27,8 +29,7 @@ const getDisponibilidad = manejar(async (req, res) => {
     res.json(data);
 }, 'Error al consultar la disponibilidad');
 
-// POST /api/citas/reservar  { id_doctor, fecha, hora } → separa el horario unos minutos
-// POST /api/citas/reservar  { id_doctor, fecha, hora, modalidad }
+// POST /api/citas/reservar  { id_doctor, fecha, hora, modalidad } → separa el horario
 const reservar = manejar(async (req, res) => {
     const { id_doctor, fecha, hora, modalidad = 'PRESENCIAL' } = req.body;
     
@@ -48,9 +49,7 @@ const reservar = manejar(async (req, res) => {
         const id = await citaModel.crearReserva({
             id_doctor, fecha, hora, monto: montoCobrar, token, minutos: HOLD_MINUTOS, modalidad
         });
-        res.status(201).json({ 
-            id, token, segundos_restantes: HOLD_MINUTOS * 60, monto: montoCobrar, modalidad 
-        });
+        res.status(201).json({ id, token, segundos_restantes: HOLD_MINUTOS * 60, monto: montoCobrar, modalidad });
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(409).json({ error: 'Ese horario se acaba de ocupar. Elige otro.' });
@@ -60,8 +59,6 @@ const reservar = manejar(async (req, res) => {
 }, 'Error al separar el horario');
 
 // POST /api/citas/:id/pagar
-// { token, culqi_token, dni, nombre_completo, telefono, correo, motivo }
-// culqi_token es el id que generó el checkout en el navegador (tarjeta o Yape).
 const pagar = manejar(async (req, res) => {
     const { token, culqi_token, dni, nombre_completo, telefono, correo, motivo } = req.body;
     if (!token || !culqi_token || !/^\d{8}$/.test(dni || '') || !nombre_completo?.trim()
@@ -77,7 +74,7 @@ const pagar = manejar(async (req, res) => {
         });
     }
 
-    // 2) Cobra. El monto sale de la BD (doctores.precio), no del navegador.
+    // 2) Cobra. El monto sale de la BD, no del navegador.
     let id_paciente, cargo;
     try {
         id_paciente = await pacienteModel.guardarPorDni({
@@ -111,8 +108,8 @@ const pagar = manejar(async (req, res) => {
     // 4) En segundo plano: Calendar, Sheets y app de la clínica
     ejecutarIntegraciones(cita.id).catch((e) => console.error('Integraciones:', e));
 }, 'Error al procesar el pago');
+
 // PUT /api/citas/:id/reprogramar
-// Este controlador actualiza la DB y actualiza el Google Calendar del doctor
 const reprogramar = manejar(async (req, res) => {
     const { fecha, hora } = req.body;
     const idCita = req.params.id;
@@ -157,13 +154,14 @@ const reprogramar = manejar(async (req, res) => {
 
     res.json({ mensaje: 'Cita reprogramada con éxito' });
 }, 'Error al reprogramar la cita');
-// POST /api/citas/:id/liberar  { token } → el paciente cambió de horario
+
+// POST /api/citas/:id/liberar
 const liberar = manejar(async (req, res) => {
     await citaModel.liberar(req.params.id, req.body.token);
     res.json({ ok: true });
 }, 'Error al liberar el horario');
 
-// GET /api/citas?estado=APROBADO  (panel admin: protégela con tu middleware de autenticación)
+// GET /api/citas?estado=APROBADO
 const listar = manejar(async (req, res) => {
     res.json(await citaModel.listar(req.query.estado));
 }, 'Error al listar las citas');
