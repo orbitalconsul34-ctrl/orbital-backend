@@ -12,14 +12,22 @@ const leerJSON = (v) => {
 const normalizar = (r) => r && { ...r, formacion: leerJSON(r.formacion), cursos: leerJSON(r.cursos), experiencia: leerJSON(r.experiencia) };
 
 // Solo los campos enviados; los JSON se guardan como texto
+// Solo los campos enviados; los JSON se guardan como texto, y los strings vacíos se vuelven NULL
 const preparar = (datos) => {
     const out = {};
     for (const c of CAMPOS) {
-        if (datos[c] !== undefined) out[c] = CAMPOS_JSON.includes(c) ? JSON.stringify(datos[c]) : datos[c];
+        if (datos[c] !== undefined) {
+            if (CAMPOS_JSON.includes(c)) {
+                out[c] = JSON.stringify(datos[c]);
+            } else if (datos[c] === '') {
+                out[c] = null; // Si está vacío, manda NULL para evitar el error ER_DUP_ENTRY
+            } else {
+                out[c] = datos[c];
+            }
+        }
     }
     return out;
 };
-
 // Uso interno / panel admin (incluye google_calendar_id)
 const obtenerTodos = async () => {
     const [rows] = await db.query('SELECT * FROM doctores');
