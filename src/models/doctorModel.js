@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 const CAMPOS = ['nombres', 'especialidad', 'titulo', 'foto_url', 'formacion', 'cursos', 'experiencia',
-    'precio', 'duracion_min', 'google_calendar_id', 'correo_corporativo', 'activo'];
+    'precio', 'precio_virtual', 'duracion_min', 'google_calendar_id', 'correo_corporativo', 'activo'];
 const CAMPOS_JSON = ['formacion', 'cursos', 'experiencia'];
 
 // MariaDB devuelve las columnas JSON como texto; MySQL como objeto. Aceptamos ambos.
@@ -29,7 +29,7 @@ const obtenerTodos = async () => {
 // Página pública de reservas: sin datos privados
 const obtenerPublicos = async () => {
     const [rows] = await db.query(
-        'SELECT id, nombres, especialidad, titulo, foto_url, precio, duracion_min FROM doctores WHERE activo = 1 ORDER BY especialidad, nombres'
+        'SELECT id, nombres, especialidad, titulo, foto_url, precio, precio_virtual, duracion_min FROM doctores WHERE activo = 1 ORDER BY especialidad, nombres'
     );
     return rows;
 };
@@ -37,7 +37,7 @@ const obtenerPublicos = async () => {
 // Página pública de perfil del doctor
 const obtenerPerfil = async (id) => {
     const [rows] = await db.query(
-        'SELECT id, nombres, especialidad, titulo, foto_url, formacion, cursos, experiencia, precio, duracion_min FROM doctores WHERE id = ? AND activo = 1',
+        'SELECT id, nombres, especialidad, titulo, foto_url, formacion, cursos, experiencia, precio, precio_virtual, duracion_min FROM doctores WHERE id = ? AND activo = 1',
         [id]
     );
     return normalizar(rows[0]);

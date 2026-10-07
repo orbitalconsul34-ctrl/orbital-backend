@@ -4,7 +4,7 @@ const BASE = `
     SELECT c.id,
            DATE_FORMAT(c.fecha, '%Y-%m-%d') AS fecha,
            TIME_FORMAT(c.hora, '%H:%i') AS hora,
-           c.estado, c.monto, c.motivo, c.metodo_pago,
+           c.estado, c.monto, c.motivo, c.metodo_pago, c.modalidad,
            c.referencia_pago AS pago_id,
            c.google_event_id, c.creado_en,
            p.dni, p.nombre_completo AS paciente, p.telefono, p.correo,
@@ -29,7 +29,7 @@ const ocupados = async (idDoctor, desde, hasta) => {
 
 // Separa el horario por X minutos. Si dos personas lo intentan a la vez,
 // el índice único uq_cupo_activo hace fallar a la segunda (ER_DUP_ENTRY).
-const crearReserva = async ({ id_doctor, fecha, hora, monto, token, minutos }) => {
+const crearReserva = async ({ id_doctor, fecha, hora, monto, token, minutos, modalidad }) => {
     // Libera solo ESTE horario si quedó una reserva vencida sin pagar
     await db.query(
         `UPDATE citas_transacciones SET estado = 'EXPIRADA'
@@ -38,9 +38,9 @@ const crearReserva = async ({ id_doctor, fecha, hora, monto, token, minutos }) =
         [id_doctor, fecha, hora]
     );
     const [r] = await db.query(
-        `INSERT INTO citas_transacciones (id_doctor, fecha, hora, estado, monto, token_reserva, expira_en)
-         VALUES (?, ?, ?, 'PENDIENTE', ?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE))`,
-        [id_doctor, fecha, hora, monto, token, minutos]
+        `INSERT INTO citas_transacciones (id_doctor, fecha, hora, estado, monto, token_reserva, expira_en, modalidad)
+         VALUES (?, ?, ?, 'PENDIENTE', ?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE), ?)`,
+        [id_doctor, fecha, hora, monto, token, minutos, modalidad]
     );
     return r.insertId;
 };

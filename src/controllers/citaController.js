@@ -4,7 +4,7 @@ const pacienteModel = require('../models/pacienteModel');
 const disponibilidad = require('../services/disponibilidad');
 const culqi = require('../services/culqi');
 const { ejecutarIntegraciones } = require('../services/integraciones');
-
+const doctorModel = require('../models/doctorModel');
 const HOLD_MINUTOS = Number(process.env.HOLD_MINUTOS) || 15;
 const reFecha = /^\d{4}-\d{2}-\d{2}$/;
 const reHora = /^\d{2}:\d{2}$/;
@@ -28,20 +28,29 @@ const getDisponibilidad = manejar(async (req, res) => {
 }, 'Error al consultar la disponibilidad');
 
 // POST /api/citas/reservar  { id_doctor, fecha, hora } → separa el horario unos minutos
+// POST /api/citas/reservar  { id_doctor, fecha, hora, modalidad }
 const reservar = manejar(async (req, res) => {
-    const { id_doctor, fecha, hora } = req.body;
+    const { id_doctor, fecha, hora, modalidad = 'PRESENCIAL' } = req.body;
+    
     if (!id_doctor || !reFecha.test(fecha || '') || !reHora.test(hora || '')) {
         return res.status(400).json({ error: 'Datos incompletos' });
     }
-    const doctor = await disponibilidad.horarioValido(id_doctor, fecha, hora);
-    if (!doctor) return res.status(409).json({ error: 'Ese horario no está disponible. Elige otro.' });
+    
+    const doctorValido = await disponibilidad.horarioValido(id_doctor, fecha, hora);
+    if (!doctorValido) return res.status(409).json({ error: 'Ese horario no está disponible. Elige otro.' });
+
+    // Lógica para elegir el precio correcto según la modalidad
+    const doctorBD = await doctorModel.obtenerPerfil(id_doctor);
+    const montoCobrar = modalidad === 'VIRTUAL' ? doctorBD.precio_virtual : doctorBD.precio;
 
     const token = crypto.randomBytes(16).toString('hex');
     try {
         const id = await citaModel.crearReserva({
-            id_doctor, fecha, hora, monto: doctor.precio, token, minutos: HOLD_MINUTOS
+            id_doctor, fecha, hora, monto: montoCobrar, token, minutos: HOLD_MINUTOS, modalidad
         });
-        res.status(201).json({ id, token, segundos_restantes: HOLD_MINUTOS * 60, monto: doctor.precio });
+        res.status(201).json({ 
+            id, token, segundos_restantes: HOLD_MINUTOS * 60, monto: montoCobrar, modalidad 
+        });
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(409).json({ error: 'Ese horario se acaba de ocupar. Elige otro.' });
